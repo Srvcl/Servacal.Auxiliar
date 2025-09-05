@@ -1,6 +1,12 @@
 import pandas as pd
 import datetime
 from pathlib import Path
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
 class InvoiceGenerator:
     def __init__(self, clients_csv_path, works_csv_path, tax_rate=0.21):
@@ -310,6 +316,184 @@ class InvoiceGenerator:
         except Exception as e:
             sys.stdout = original_stdout
             print(f"Error saving invoice: {e}")
+    
+    def save_invoice_to_pdf(self, invoice, filename=None):
+        """Save invoice to a PDF file"""
+        if invoice is None:
+            print("No invoice to save")
+            return
+        
+        if filename is None:
+            filename = f"invoice_{invoice['invoice_number']}.pdf"
+        
+        try:
+            # Create PDF document
+            doc = SimpleDocTemplate(filename, pagesize=A4, 
+                                  rightMargin=72, leftMargin=72, 
+                                  topMargin=72, bottomMargin=72)
+            
+            # Get styles
+            styles = getSampleStyleSheet()
+            
+            # Create custom styles
+            title_style = ParagraphStyle(
+                'InvoiceTitle',
+                parent=styles['Heading1'],
+                fontSize=24,
+                spaceAfter=30,
+                textColor=colors.darkblue,
+                alignment=TA_CENTER,
+                fontName='Helvetica-Bold'
+            )
+            
+            header_style = ParagraphStyle(
+                'InvoiceHeader',
+                parent=styles['Heading2'],
+                fontSize=14,
+                spaceAfter=12,
+                spaceBefore=20,
+                textColor=colors.darkblue,
+                fontName='Helvetica-Bold'
+            )
+            
+            normal_style = ParagraphStyle(
+                'InvoiceNormal',
+                parent=styles['Normal'],
+                fontSize=10,
+                spaceAfter=6,
+                leading=14,
+                fontName='Helvetica'
+            )
+            
+            client_style = ParagraphStyle(
+                'ClientInfo',
+                parent=styles['Normal'],
+                fontSize=11,
+                spaceAfter=6,
+                leading=16,
+                fontName='Helvetica-Bold'
+            )
+            
+            # Build PDF content
+            story = []
+            
+            # Invoice title
+            story.append(Paragraph("INVOICE", title_style))
+            story.append(Spacer(1, 20))
+            
+            # Invoice number and date
+            story.append(Paragraph(f"<b>Invoice #:</b> {str(invoice['invoice_number'])}", normal_style))
+            story.append(Paragraph(f"<b>Date:</b> {str(invoice['invoice_date'])}", normal_style))
+            story.append(Spacer(1, 20))
+            
+            # Client information
+            story.append(Paragraph("BILL TO:", header_style))
+            client = invoice['client_data']
+            
+            # Get client name
+            name_columns = ['name', 'company_name', 'client_name', 'Name', 'Company_Name', 'Client_Name']
+            client_name = "Unknown Client"
+            for col in name_columns:
+                if col in client and pd.notna(client[col]):
+                    client_name = client[col]
+                    break
+            
+            story.append(Paragraph(str(client_name), client_style))
+            
+            # Get address
+            address_columns = ['address', 'Address', 'street', 'Street']
+            for col in address_columns:
+                if col in client and pd.notna(client[col]):
+                    story.append(Paragraph(str(client[col]), normal_style))
+                    break
+            
+            # Get zip code
+            zip_columns = ['zip_code', 'zip', 'postal_code', 'Zip_Code', 'ZIP', 'Postal_Code']
+            for col in zip_columns:
+                if col in client and pd.notna(client[col]):
+                    story.append(Paragraph(str(client[col]), normal_style))
+                    break
+            
+            story.append(Spacer(1, 30))
+            
+            # Services table
+            story.append(Paragraph("SERVICES:", header_style))
+            story.append(Spacer(1, 10))
+            
+            # Prepare table data
+            table_data = [['Description', 'Date', 'Amount']]
+            
+            for work in invoice['works']:
+                # Get description
+                desc_columns = ['description', 'concept', 'service', 'Description', 'Concept', 'Service']
+                description = "Service"
+                for col in desc_columns:
+                    if col in work and pd.notna(work[col]):
+                        description = str(work[col])
+                        break
+                
+                # Get date
+                date_columns = ['date', 'Date', 'work_date', 'Work_Date']
+                work_date = "N/A"
+                for col in date_columns:
+                    if col in work and pd.notna(work[col]):
+                        work_date = str(work[col])[:10]
+                        break
+                
+                # Get amount
+                amount_columns = ['amount', 'import', 'price', 'cost', 'value', 'total', 'Amount', 'Import', 'Price']
+                amount = 0
+                for col in amount_columns:
+                    if col in work and pd.notna(work[col]):
+                        amount = work[col]
+                        break
+                
+                table_data.append([description, work_date, f"${amount:.2f}"])
+            
+            # Add totals row
+            table_data.append(['', '', ''])
+            table_data.append(['Subtotal:', '', f"${invoice['subtotal']:.2f}"])
+            table_data.append([f'Tax ({invoice["tax_rate"]:.1f}%):', '', f"${invoice['tax_amount']:.2f}"])
+            table_data.append(['TOTAL:', '', f"${invoice['total_amount']:.2f}"])
+            
+            # Create table
+            table = Table(table_data, colWidths=[3.5*inch, 1.5*inch, 1*inch])
+            table.setStyle(TableStyle([
+                # Header row
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (2, 0), (2, -1), 'RIGHT'),  # Amount column right-aligned
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                
+                # Data rows
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 10),
+                ('GRID', (0, 0), (-1, -4), 1, colors.black),  # Grid for data rows
+                ('LINEBELOW', (0, -4), (-1, -4), 2, colors.black),  # Line above totals
+                
+                # Totals rows
+                ('FONTNAME', (0, -3), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, -3), (-1, -1), 11),
+                ('LINEABOVE', (0, -1), (-1, -1), 2, colors.black),  # Line above final total
+                ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),  # Highlight total row
+            ]))
+            
+            story.append(table)
+            story.append(Spacer(1, 30))
+            
+            # Footer
+            story.append(Paragraph("Thank you for your business!", normal_style))
+            story.append(Paragraph("For questions about this invoice, please contact us.", normal_style))
+            
+            # Build PDF
+            doc.build(story)
+            print(f"Invoice PDF saved to {filename}")
+            
+        except Exception as e:
+            print(f"Error saving invoice to PDF: {e}")
 
 
 # Example usage and demo
@@ -334,8 +518,8 @@ def main():
         tax_rate=0.21  # 21% tax rate (adjust as needed)
     )
     
-    # Example: Generate invoice for client with ID "12345"
-    client_id = "12345"  # Replace with actual client ID
+    # Example: Generate invoice for client with ID 12345
+    client_id = 12345  # Replace with actual client ID
     
     # Generate the invoice
     invoice = generator.generate_invoice(client_id)
@@ -344,8 +528,11 @@ def main():
         # Print the invoice to console
         generator.print_invoice(invoice)
         
-        # Save invoice to file
+        # Save invoice to text file
         generator.save_invoice_to_file(invoice)
+        
+        # Save invoice to PDF file
+        generator.save_invoice_to_pdf(invoice)
     else:
         print("Failed to generate invoice")
 
@@ -363,7 +550,7 @@ if __name__ == "__main__":
     
     # Sample works data
     works_sample = pd.DataFrame({
-        'client_id': ['12345', '12345', '67890', '12345'],
+        'client_id': [12345, 12345, 67890, 12345],  # Use integers to match client IDs
         'date': ['2024-01-15', '2024-01-20', '2024-01-18', '2024-01-25'],
         'description': ['Web Development', 'Database Setup', 'Consulting', 'Bug Fixes'],
         'amount': [1500.00, 800.00, 300.00, 400.00]

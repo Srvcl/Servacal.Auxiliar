@@ -285,13 +285,13 @@ class InvoiceGenerator:
                     amount = work[col]
                     break
             
-            print(f"{description:<30} {work_date:<12} ${amount:<9.2f}")
+            print(f"{description:<30} {work_date:<12} Eur{amount:<9.2f}")
         
         print("-" * 60)
-        print(f"{'Subtotal:':<54} ${invoice['subtotal']:>8.2f}")
-        print(f"{'Tax (' + str(invoice['tax_rate']) + '%):':<54} ${invoice['tax_amount']:>8.2f}")
+        print(f"{'Subtotal:':<54} Eur{invoice['subtotal']:>8.2f}")
+        print(f"{'Tax (' + str(invoice['tax_rate']) + '%):':<54} Eur{invoice['tax_amount']:>8.2f}")
         print("=" * 60)
-        print(f"{'TOTAL:':<54} ${invoice['total_amount']:>8.2f}")
+        print(f"{'TOTAL:':<54} Eur{invoice['total_amount']:>8.2f}")
         print("=" * 60)
     
     def save_invoice_to_file(self, invoice, filename=None):
@@ -448,13 +448,13 @@ class InvoiceGenerator:
                         amount = work[col]
                         break
                 
-                table_data.append([description, work_date, f"${amount:.2f}"])
+                table_data.append([description, work_date, f"Eur {amount:.2f}"])
             
             # Add totals row
             table_data.append(['', '', ''])
-            table_data.append(['Subtotal:', '', f"${invoice['subtotal']:.2f}"])
-            table_data.append([f'Tax ({invoice["tax_rate"]:.1f}%):', '', f"${invoice['tax_amount']:.2f}"])
-            table_data.append(['TOTAL:', '', f"${invoice['total_amount']:.2f}"])
+            table_data.append(['Subtotal:', '', f"Eur{invoice['subtotal']:.2f}"])
+            table_data.append([f'Tax ({invoice["tax_rate"]:.1f}%):', '', f"Eur{invoice['tax_amount']:.2f}"])
+            table_data.append(['TOTAL:', '', f"Eur{invoice['total_amount']:.2f}"])
             
             # Create table
             table = Table(table_data, colWidths=[3.5*inch, 1.5*inch, 1*inch])
@@ -519,7 +519,7 @@ def main():
     )
     
     # Example: Generate invoice for client with ID 12345
-    client_id = 12345  # Replace with actual client ID
+    client_id = 1  # Replace with actual client ID
     
     # Generate the invoice
     invoice = generator.generate_invoice(client_id)
@@ -541,18 +541,18 @@ if __name__ == "__main__":
     
     # Sample clients data
     clients_sample = pd.DataFrame({
-        'id': ['12345', '67890', '11111'],
-        'name': ['ABC Corporation', 'John Doe', 'XYZ Ltd'],
-        'address': ['123 Main St', '456 Oak Ave', '789 Pine Rd'],
-        'zip_code': ['10001', '90210', '12345']
+        'id': ['1', '67890', '11111'],
+        'name': ['Fermin Alejandro Talaverano Rosa', 'John Doe', 'XYZ Ltd'],
+        'address': ['Finca La Aduana. Valverde de Leganes', '456 Oak Ave', '789 Pine Rd'],
+        'zip_code': ['06130', '90210', '12345']
     })
     clients_sample.to_csv('clients.csv', index=False)
     
     # Sample works data
     works_sample = pd.DataFrame({
-        'client_id': [12345, 12345, 67890, 12345],  # Use integers to match client IDs
+        'client_id': [1, 12345, 67890, 12345],  # Use integers to match client IDs
         'date': ['2024-01-15', '2024-01-20', '2024-01-18', '2024-01-25'],
-        'description': ['Web Development', 'Database Setup', 'Consulting', 'Bug Fixes'],
+        'description': ['Vacunacion de 321 lechones', 'Database Setup', 'Consulting', 'Bug Fixes'],
         'amount': [1500.00, 800.00, 300.00, 400.00]
     })
     works_sample.to_csv('works.csv', index=False)

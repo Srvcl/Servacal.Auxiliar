@@ -25,6 +25,7 @@ class InvoiceGenerator:
         # Load data
         self.clients_df = self.load_clients_data()
         self.works_df = self.load_works_data()
+    #no se crean a continuacion conflictos al ser la misma variable df al cargar los datos de works y los datos de clients porque son metodos diferentes en el script. Las variables son almacenadas en instacnias distintas. Una vez que el metodo deja de ejecutarse estas variables desaparacen.
     
     def load_clients_data(self):
         """Load client data from CSV file"""
@@ -96,7 +97,7 @@ class InvoiceGenerator:
             print(f"Error: Client with ID '{client_id}' not found")
             return None
         
-        return client_row.iloc[0].to_dict()
+        return client_row.iloc[0].to_dict()#de esta manera la linea se convierte en un diccionario, para su posible uso posterior en el codigo. 
     
     def get_client_works(self, client_id):
         """
@@ -162,7 +163,7 @@ class InvoiceGenerator:
             'total': round(total, 2)
         }
     
-    def generate_invoice(self, client_id, invoice_number=None, invoice_date=None):
+    def generate_invoice(self, client_id, invoice_number=None, invoice_date=None):#el None en cada uno de los dos elementos se refiere a que si no se le proporciona valor alguno, coje por defecto en funcion de lo que se puede ver maś abajo en el código. Relacionado con la fecha y hora. 
         """
         Generate a complete invoice for a client
         
@@ -215,9 +216,9 @@ class InvoiceGenerator:
             print("No invoice to print")
             return
         
-        print("=" * 60)
+        print("=" * 92)
         print(f"INVOICE #{invoice['invoice_number']}")
-        print("=" * 60)
+        print("=" * 92)
         print(f"Date: {invoice['invoice_date']}")
         print()
         
@@ -253,9 +254,9 @@ class InvoiceGenerator:
         
         # Works/Services
         print("SERVICES:")
-        print("-" * 60)
-        print(f"{'Description':<30} {'Date':<12} {'Amount':<10}")
-        print("-" * 60)
+        print("-" * 92)
+        print(f"{'Description':<70} {'Date':<12} {'Amount':<10}")
+        print("-" * 92)
         
         for work in invoice['works']:
             # Get description
@@ -263,7 +264,7 @@ class InvoiceGenerator:
             description = "Service"
             for col in desc_columns:
                 if col in work and pd.notna(work[col]):
-                    description = str(work[col])[:28]  # Truncate if too long
+                    description = str(work[col])[:70]  # Truncate if too long
                     break
             
             # Get date
@@ -285,14 +286,14 @@ class InvoiceGenerator:
                     amount = work[col]
                     break
             
-            print(f"{description:<30} {work_date:<12} Eur{amount:<9.2f}")
+            print(f"{description:<70} {work_date:<12} Eur{amount:<9.2f}")
         
-        print("-" * 60)
-        print(f"{'Subtotal:':<54} Eur{invoice['subtotal']:>8.2f}")
-        print(f"{'Tax (' + str(invoice['tax_rate']) + '%):':<54} Eur{invoice['tax_amount']:>8.2f}")
-        print("=" * 60)
-        print(f"{'TOTAL:':<54} Eur{invoice['total_amount']:>8.2f}")
-        print("=" * 60)
+        print("-" * 92)
+        print(f"{'Subtotal:':<79} Eur{invoice['subtotal']:>8.2f}")
+        print(f"{'Tax (' + str(invoice['tax_rate']) + '%):':<79} Eur{invoice['tax_amount']:>8.2f}")
+        print("=" * 92)
+        print(f"{'TOTAL:':<79} Eur{invoice['total_amount']:>8.2f}")
+        print("=" * 92)
     
     def save_invoice_to_file(self, invoice, filename=None):
         """Save invoice to a text file"""
@@ -518,7 +519,7 @@ def main():
         tax_rate=0.21  # 21% tax rate (adjust as needed)
     )
     
-    # Example: Generate invoice for client with ID 12345
+    # Example: Generate invoice for client with ID 1
     client_id = 1  # Replace with actual client ID
     
     # Generate the invoice
@@ -536,29 +537,4 @@ def main():
     else:
         print("Failed to generate invoice")
 
-if __name__ == "__main__":
-    # Create sample CSV files for demonstration
-    
-    # Sample clients data
-    clients_sample = pd.DataFrame({
-        'id': ['1', '67890', '11111'],
-        'name': ['Fermin Alejandro Talaverano Rosa', 'John Doe', 'XYZ Ltd'],
-        'address': ['Finca La Aduana. Valverde de Leganes', '456 Oak Ave', '789 Pine Rd'],
-        'zip_code': ['06130', '90210', '12345']
-    })
-    clients_sample.to_csv('clients.csv', index=False)
-    
-    # Sample works data
-    works_sample = pd.DataFrame({
-        'client_id': [1, 12345, 67890, 12345],  # Use integers to match client IDs
-        'date': ['2024-01-15', '2024-01-20', '2024-01-18', '2024-01-25'],
-        'description': ['Vacunacion de 321 lechones', 'Database Setup', 'Consulting', 'Bug Fixes'],
-        'amount': [1500.00, 800.00, 300.00, 400.00]
-    })
-    works_sample.to_csv('works.csv', index=False)
-    
-    print("Sample CSV files created: clients.csv and works.csv")
-    print("\nRunning invoice generation demo...\n")
-    
-    # Run the main demo
-    main()
+main()

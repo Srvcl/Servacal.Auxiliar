@@ -1,9 +1,3 @@
-# Robot-Course-IA
-Robot created in the IA-course.
+# Scripts para facturas
 
-The essence is using an assistant to work in Servacal_Spv
-
-Private use.
-
-Thänks!!
-
+Se detallan scripts para la elaboración de distintos tipos de facturas. 
